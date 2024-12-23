@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.backbase.buildingblocks</groupId>
+        <artifactId>backbase-openapi-spec-starter-parent</artifactId>
+        <version>15.2.0</version>
+    </parent>
+
+    <groupId>com.backbase.message</groupId>
+    <artifactId>messaging-api</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>Backbase :: messaging-api</name>
+
+    <properties>
+        <!-- Plugin versions -->
+        <boat-maven-plugin.version>0.16.6</boat-maven-plugin.version>
+        <ignored-lint-rules>150,219,215,218,166,136,174,235,107,171,224,143,151,129,146,147,172,145,115,132,120,134,183,154,105,104,130,118,110,153,101,176,116,M009,H002,M010,H001,M008,S005,S006,S007,M011,M0012</ignored-lint-rules>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-annotations</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.openapitools</groupId>
+            <artifactId>jackson-databind-nullable</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Maven Assembly Plugin -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>assemble-api-zip</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>assembly/api.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Backbase BOAT Maven Plugin -->
+            <plugin>
+                <groupId>com.backbase.oss</groupId>
+                <artifactId>boat-maven-plugin</artifactId>
+                <version>${boat-maven-plugin.version}</version>
+                <executions>
+                    <!-- Generate REST Template -->
+                    <execution>
+                        <id>generate-service-name-client-code</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate-rest-template-embedded</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/src/main/resources/client-api-v1.yaml</inputSpec>
+                            <apiPackage>com.backbase.messaging.api.client.v2</apiPackage>
+                            <modelPackage>com.backbase.messaging.api.client.v2.model</modelPackage>
+                        </configuration>
+                    </execution>
+
+                    <!-- Validate API Specifications -->
+                    <execution>
+                        <id>boat-validation</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>validate</goal>
+                        </goals>
+                        <configuration>
+                            <input>${project.basedir}/src/main/resources/client-api-v1.yaml</input>
+                            <failOnWarning>true</failOnWarning>
+                        </configuration>
+                    </execution>
+
+                    <!-- Bundle API Specifications -->
+                    <execution>
+                        <id>boat-bundle</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>bundle</goal>
+                        </goals>
+                        <configuration>
+                            <input>${project.basedir}/src/main/resources</input>
+                            <output>${project.build.directory}</output>
+                            <versionFileName>true</versionFileName>
+                            <includes>*api*.yaml</includes>
+                        </configuration>
+                    </execution>
+
+                    <!-- Unversioned Bundles -->
+                    <execution>
+                        <id>boat-bundle-unversioned</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>bundle</goal>
+                        </goals>
+                        <configuration>
+                            <input>${project.basedir}/src/main/resources</input>
+                            <output>${project.build.directory}/unversioned</output>
+                            <versionFileName>false</versionFileName>
+                            <includes>*api*.yaml</includes>
+                        </configuration>
+                    </execution>
+
+                    <!-- Linting API Specifications -->
+                    <execution>
+                        <id>boat-linting</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>lint</goal>
+                        </goals>
+                        <configuration>
+                            <ignoreRules>${ignored-lint-rules}</ignoreRules>
+                            <inputSpec>${project.build.directory}</inputSpec>
+                            <output>${project.basedir}/target/boat-lint-reports</output>
+                            <writeLintReport>true</writeLintReport>
+                            <failOnWarning>true</failOnWarning>
+                        </configuration>
+                    </execution>
+
+                    <!-- Generate Documentation -->
+                    <execution>
+                        <id>boat-docs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.build.directory}/unversioned/client-api-v1.yaml</inputSpec>
+                            <output>${project.build.directory}/generated-docs</output>
+                            <generatorName>html2</generatorName>
+                            <generateAliasAsModel>true</generateAliasAsModel>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
